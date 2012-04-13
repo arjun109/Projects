@@ -1,0 +1,161 @@
+REQUIRE "atoms.a4l";
+PROVIDE "BohrTabulated.a4c";
+
+MODEL Bohr(
+	Z	"Atomic number of an electron"
+		WILL_BE positive_variable;
+	n	"orbit in which electron present" 
+		WILL_BE positive_variable ;
+	n1      "n1 and n2 are the various orbits between which transition of an atom occurs"
+		WILL_BE positive_variable ;
+	n2      "n1 and n2 are the various orbits between which transition of an atom occurs"
+		WILL_BE positive_variable ;
+)  ;
+
+			(* variables *)
+
+	lambda  " wavelength "
+		IS_A distance ;
+	velocityn "velocity of an atom in nth orbit"
+		 IS_A speed ;
+	kinetic_energy  "Kinetic, potential and total energy of electron in nth orbit"
+		 IS_A energy ;
+	potential_energy IS_A energy ;
+	total_energy IS_A energy ;
+	threshold_energy "energy released or required between transition of electron fron n1th orbit to n2th orbit "
+		 IS_A energy ;
+	rn	"the radius of an atom in nth orbit"
+		IS_A delta_distance ;
+
+
+ 		NOTES 'purpose' SELF { Various Equations necessary for the Bohr Model of an atom 
+					are described below }
+    END NOTES;
+		
+			(* equations *)
+       
+	rn = n*n * 1{PLANCK_C}^2 * 1{EPSILON0} / (Z* 1{PI} * 1{eMASS} * 1{eCHARGE}^2 ) ;
+
+	velocityn = Z * 1{eCHARGE}^2 /(n*2* 1{EPSILON0} * 1{PLANCK_C})   ;
+
+	kinetic_energy =  (1{eMASS})*(1{eCHARGE}^4)*(Z^2) / ( n^2 * 8 * 1{EPSILON0}^2 * 1{PLANCK_C}^2 )  ;
+
+	total_energy = -kinetic_energy ;
+
+	potential_energy = -2 * kinetic_energy ;
+	
+	threshold_energy = 1{eMASS}* 1{eCHARGE}^4 * 1{EPSILON0}^-2 * 1{PLANCK_C}^-2 * Z^2 * ( n1^-2  -  n2^-2)/8 ;
+	(* if threshold energy positive then enrgy released in terms of radiation if its negative it is required or absorbed*)
+	
+	lambda = 1{PLANCK_C} * 1{LIGHT_C} / threshold_energy  ;
+
+
+METHODS
+	METHOD specify;
+	    NOTES
+		'purpose' SELF {to fix four variables and make the problem well-posed}
+	    END NOTES;
+		FIX Z;
+		FIX n;
+		FIX n1;
+		FIX n2;
+	END specify;
+
+	
+METHOD values;
+    NOTES
+	'purpose' SELF {to set the values for the fixed variables}
+    END NOTES;
+	Z		        :=	2;
+	n			:=	1 ;
+	n1			:=	1 ;
+	n2			:=	4 ;
+END values;
+
+METHOD bound_self;
+END bound_self;
+
+METHOD bound_all;
+    RUN bound_self;
+END bound_all;
+
+METHOD scale_self;
+END scale_self;
+
+METHOD scale_all;
+    RUN scale_self;
+END scale_all;
+
+METHOD default_self;
+	Z 				:=	2 ;
+	n				:=	1 ;
+END default_self;
+
+METHOD default_all;
+    RUN default_self;
+	Z		        :=	2;
+	n			:=	1 ;
+	n1			:=	1 ;
+	n2			:=	4 ;
+END default_all;
+
+
+END Bohr ;
+
+
+MODEL tabulated_Bohr_values;
+  	
+	
+	n_entries "number of Bohr atoms to simulate"
+	    IS_A integer_constant;
+	n_entries :== 10;
+    	
+	Z[1..n_entries] "set of atomic numbers for the Bohr model of an atom"
+	    IS_A positive_variable;
+	
+        n[1..n_entries] "nth orbit in which electron is present"
+	    IS_A positive_variable;
+
+	n1	"the initial orbit in which electron was present"
+		IS_A positive_variable;
+	
+	n2	"the final orbit in which electron transition occured"
+		IS_A positive_variable;
+
+    FOR i IN [1..n_entries] CREATE
+	b[i] IS_A Bohr(Z[i],n[i],n1,n2);
+    END FOR;
+
+
+
+METHODS
+
+METHOD default_self;
+END default_self;
+
+METHOD specify;
+	RUN b[1..n_entries].specify;
+END specify;
+
+METHOD values;
+    NOTES 'purpose' SELF {to set up 10 Bohr models models having n 
+	ranging from 1 to 10}
+    END NOTES;
+	n1 := 2 ;
+	n2 := 4 ;
+	
+	FOR i IN [1..n_entries] DO
+		n[i] := i ;
+	END FOR;
+END values;
+
+METHOD scale_self;
+END scale_self;
+
+END tabulated_Bohr_values ;
+
+ADD NOTES IN tabulated_Projectile_values;
+'description' SELF {This model sets up an array of Bohr Model of an atom to
+	   compute a range of various parameters for different orbits of an atom.}
+'purpose' SELF {to illustrate the use of arrays in ASCEND}
+END NOTES;

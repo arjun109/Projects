@@ -1,0 +1,164 @@
+REQUIRE "atoms.a4l";
+PROVIDE "ProjectileTabulated.a4c";
+
+MODEL Projectile  (
+	theta      "angle with horizontal ground at the time of throwing"
+		WILL_BE angle ;
+	magn_speed  "the initial overall magnitude of speed"
+ 		WILL_BE speed ;
+	initial_height 		"the initial height "
+		WILL_BE distance;
+	final_height	"the final height"
+		WILL_BE distance;
+
+)  ;
+
+			(* variables *)
+	max_height	"the maximum height of the projectile"
+		IS_A distance;
+	
+	range	"distance covered bt the projectile in horizontal direction"
+		IS_A distance;
+	
+	instant_hor_dist , instant_ver_dist "distance travelled from the starting point in horizontal and vertical direction"
+		IS_A distance ;
+
+        time_flight , max_flight_time    "total time of flight  and time to reach maximum height by a flight"
+		IS_A time;
+     
+	horizontal_speed ,vertical_speed "speed split into horizontal speed and vertical speed"
+		IS_A speed ;
+	
+ 	instant_time "any time in between the flight or projectile motion"
+		IS_A time ;
+
+
+ 		NOTES 'purpose' SELF { Various Equations necessary for the projectile motion 
+					are described below }
+    END NOTES;
+		
+			(* equations *)
+       
+	horizontal_speed = magn_speed * cos(theta) ;
+	vertical_speed = magn_speed * sin(theta) ;
+	max_flight_time = vertical_speed / 1{EARTH_G}    ;
+	max_height = (vertical_speed ^ 2) / ( 2 * 1{EARTH_G} )  ;
+	time_flight = max_flight_time + sqrt( (2 * (max_height + initial_height - final_height) / 1{EARTH_G} ) ) ;	
+	range = time_flight * horizontal_speed ;
+	instant_hor_dist = horizontal_speed * instant_time  ;
+	instant_ver_dist =( (vertical_speed * instant_time) - (0.5 * 1{EARTH_G} ) * (instant_time ^ 2) ) ;
+
+	
+
+METHODS
+	METHOD specify;
+	    NOTES
+		'purpose' SELF {to fix four variables and make the problem well-posed}
+	    END NOTES;
+		FIX theta;
+		FIX magn_speed;
+		FIX initial_height;
+		FIX final_height;
+	END specify;
+
+METHOD values;
+    NOTES
+	'purpose' SELF {to set the values for the fixed variables}
+    END NOTES;
+	theta		        :=	0.785;
+	magn_speed		:=	100 {m/s};
+	initial_height		:=	10 {m};
+	final_height		:=	50 {m};
+END values;
+
+METHOD bound_self;
+END bound_self;
+
+METHOD bound_all;
+    RUN bound_self;
+END bound_all;
+
+METHOD scale_self;
+END scale_self;
+
+METHOD scale_all;
+    RUN scale_self;
+END scale_all;
+
+METHOD default_self;
+	time_flight			:=	10 {s};
+	max_flight_time			:=	20 {s};
+END default_self;
+
+METHOD default_all;
+    RUN default_self;
+	theta			:=	0.785 ;
+	magn_speed		:=	500 {m/s};
+	initial_height		:=	10 {m};
+	final_height		:=	30 {m};
+END default_all		;
+
+
+END Projectile 		;
+
+
+
+
+MODEL tabulated_Projectile_values;
+    	
+	
+	n_entries "number of Projectiles to simulate"
+	    IS_A integer_constant;
+	n_entries :== 10;
+    	
+	theta[1..n_entries] "set of angle for the Projectiles"
+	    IS_A angle;
+	
+        magn_speed[1..n_entries] "initial magnitude of speed of various Projectiles"
+	    IS_A speed;
+
+	initial_height	"the initial height"
+		IS_A distance;
+	
+	final_height	"the final height"
+		IS_A distance;
+
+    FOR i IN [1..n_entries] CREATE
+	p[i] "the i-th Projectile model"
+	    IS_A Projectile(theta[i],magn_speed[i] ,
+	initial_height,final_height);
+    END FOR;
+
+
+
+METHODS
+
+METHOD default_self;
+END default_self;
+
+METHOD specify;
+	RUN p[1..n_entries].specify;
+END specify;
+
+METHOD values;
+    NOTES 'purpose' SELF {to set up 10 Projectile models having theta )
+	ranging from 0.1 to 1}
+    END NOTES;
+	initial_height := 25 {m};
+	final_height   := 5 {m};
+	
+	FOR i IN [1..n_entries] DO
+		theta[i] := i/10.0;
+	END FOR;
+END values;
+
+METHOD scale_self;
+END scale_self;
+
+END tabulated_Projectile_values;
+
+ADD NOTES IN tabulated_Projectile_values;
+'description' SELF {This model sets up an array of Projectile to
+	   compute a range of magnitude of speed for different range of theta.}
+'purpose' SELF {to illustrate the use of arrays in ASCEND}
+END NOTES;
